@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+{% load static %}
+
+
+{% block head-block %} 
+{% endblock head-block %}
+
+<!--요기 아래 블럭 속에 쓰면 메인 홈페이지에 바로 나옴-->
+{% block jw-block %}
+<section>
+    <p id="boardTitle">N E W S</p>
+    <div class="tSpace">
+      <table>
+        <colgroup>
+          <col width="15%">
+          <col width="50%">
+          <col width="15%">
+          <col width="20%">
+        </colgroup>
+        <thead>
+          <tr>
+            <th>언론사</th>
+            <th>제목</th>
+            <th>게시</th>
+            <th>썸네일</th>
+          </tr>
+        </thead>
+        <!--게시글 등록부분-->
+        <tbody id="tbody">
+          {% if publicData %}
+            {% for pdata in publicData %}
+              <tr>
+                <td>{{pdata.subtitle}}</td>
+                <td><a href={{pdata.href}} onclick="window.open(this.href, '_blank', 'width=800, height=600'); return false;">{{pdata.title}}</a></td> 
+                <td>{{pdata.time}}</td>
+                <td><img src="{{pdata.img}}"></td>
+              </tr>
+            {% endfor %}
+          {% else %}
+          <tr>
+            <td colspans='4'>데이터가 없습니다.</td>
+          </tr>
+        {% endif %}
+        </tbody>
+      </table>
+    </div>
+
+      {% comment %} <div class="searchBox">
+        <form action="#" id="search" method="post">
+          <select name="category" id="category">
+            <option value="0">전체</option>
+            <option value="title">제목</option>
+            <option value="content">내용</option>
+          </select>
+  
+          <div>
+            <input type="text" size="20">
+          </div>
+    
+          <button type="submit"><i class="fas fa-search"></i></button>
+        </form>
+      </div> {% endcomment %}
+
+    </ul>
+  </section>
+{% endblock jw-block %}
