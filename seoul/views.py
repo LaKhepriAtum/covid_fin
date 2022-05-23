@@ -1,9 +1,12 @@
+import bs4
 from django.shortcuts import render
-import cx_Oracle as ora  #오라클 연동
+#
 from django.http import JsonResponse
 from django.http import HttpResponse, HttpResponseRedirect
 from django.core.serializers.json import DjangoJSONEncoder
 from datetime import datetime
+from datetime import timedelta
+
 from django.shortcuts import render,redirect
 from urllib.request import Request,urlopen
 from urllib.parse import urlencode,unquote,quote_plus
@@ -20,61 +23,65 @@ import requests
 import json
 import pandas as pd
 from seoul.models import *
+from bs4 import BeautifulSoup
+
 # Create your views here.
 ##########################################################################
 #자치구별 확진자 현황 표에 데이터 뿌리기
 def sview(req):
-    # death()
-    # patientsum()
-    # patientadd()
-    
-    conn=ora.connect('ora_user/1234@localhost:1521/orcl')
+
+    death(req)
+    patientsum(req)
+    patientadd(req)
+
+    # conn=ora.connect('ora_user/1234@localhost:1521/orcl')
     #
     #구별누적확진자데이터
     qs = Patientsum.objects.all()
-    object_df3 = pd.DataFrame.from_records(qs.values())   
+    object_df3 = pd.DataFrame.from_records(qs.values())
     #구별 일일 추가 확진자
     qs2 = Patientadd.objects.all()
     daily = pd.DataFrame.from_records(qs2.values())
-    
+
     #전체/서울 신규.누적.사망자 데이터
     qs3 = Death.objects.all()
     totaldata = pd.DataFrame.from_records(qs3.values())
-    
+
     #최신날짜로 정렬
-    df = object_df3.sort_values(by=['date'], ascending=False)  
-    df2 = daily.sort_values(by=['date'], ascending=False) 
-     
+    # print(totaldata)
+    df = object_df3.sort_values(by=['date'], ascending=False)
+    df2 = daily.sort_values(by=['date'], ascending=False)
+
     sumdata=[]  #현재까지 누적 구별 확진자 리스트로(마포구까지)
     sumdata2=[] #현재까지 누적 구별 확진자 리스트로(서대문구~중랑구)
-    
+
     dailydata=[]  #구별 일일 추가 확진자 리스트로(마포구까지)
     dailydata2=[] #구별 일일 추가 확진자 리스트로(서대문구~중랑구)
-    
+
     allcovid=[]  #전국 신규,누적,사망자
     seoulcovid=[] #서울 신규,누적,사망자
-    
+
     #날짜순으로 정렬했을 때 0행이 최신, 포문으로 컬럼값을 빈 리스트에 넣어서
     #html로 보내줌
     for i in range(13):
-        gudata = format(df.iloc[0][i+1],',')  
+        gudata = format(df.iloc[0][i+1],',')
         dailydatas = format(df2.iloc[0][i+1],',')
-        
+
         sumdata.append(gudata)
         dailydata.append(dailydatas)
-        
+
     for i in range(12):
         gudata2 = format(df.iloc[0][i+14],',')
         dailydatas2 = format(df2.iloc[0][i+14],',')
         sumdata2.append(gudata2)
         dailydata2.append(dailydatas2)
-        
+
     for i in range(3):
         alldata = format(totaldata.iloc[0][i+3],',')
         allcovid.append(alldata)
         alldata2 = format(totaldata.iloc[1][i+3],',')
         seoulcovid.append(alldata2)
-           
+
     context = {'gudata':sumdata,'gudata2':sumdata2, 'dailydata':dailydata, 'dailydata2':dailydata2,'alldata':allcovid,'alldata2':seoulcovid}
     print(allcovid)
     return render(req, 'sview.html', context)
@@ -100,7 +107,7 @@ def chartshow(request):
 #############################################################################################
 #오라클에 누적확진자 데이터 넣기
 
-def patientsum(request):
+def patientsum(req):
     
     serial_key= "6453454b53746d6438337244774474"
     url= "http://openapi.seoul.go.kr:8088/{}/json/TbCorona19CountStatusJCG/1/800/".format(serial_key)
@@ -169,7 +176,7 @@ def patientsum(request):
 
 #############################################################################################
 #오라클에 일일확진자 데이터 넣기
-def patientadd(request):
+def patientadd(req):
     
     serial_key= "6453454b53746d6438337244774474"
     url= "http://openapi.seoul.go.kr:8088/{}/json/TbCorona19CountStatusJCG/1/800/".format(serial_key)
@@ -238,9 +245,9 @@ def patientadd(request):
 #############################################################################################
 
 #서울시/전국 신규/누적/사망자 데이터 넣기
-def death(request):
+def death(req):
     
-    day = datetime.datetime.now() 
+    day = datetime.now()
     days = day.strftime('%Y-%m-%d').replace("-","")
 
     serial_key= 'tNZFWWXUaNeQrEFYg8kFCRh0AJ/Rj8w3jSaKrKIWclkI5NMy83X+gQvspPK1yMok7/FfAE9u+8ZAalPLQ7daFw=='
