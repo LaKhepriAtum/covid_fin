@@ -80,24 +80,24 @@ WSGI_APPLICATION = 'covidPjt.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.0/ref/settings/#databases
 
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': BASE_DIR / 'db.sqlite3',
-#     }
-# }
-
-# 아래가 sqllite3을 끊고 db를 oracle로 설정한 경우
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.oracle',
-        'NAME': 'orcl',
-        'USER': 'covid_user',
-        'PASSWORD': '1234',
-        'HOST': 'localhost',
-        'PORT': '1521',
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
+
+# 아래가 sqllite3을 끊고 db를 oracle로 설정한 경우
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.oracle',
+#         'NAME': 'orcl',
+#         'USER': 'covid_user',
+#         'PASSWORD': '1234',
+#         'HOST': 'localhost',
+#         'PORT': '1521',
+#     }
+# }
 
 
 # Password validation
