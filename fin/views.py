@@ -16,19 +16,26 @@ import matplotlib
 import pandas as pd
 import FinanceDataReader as fdr
 from dateutil.parser import parse
-import datetime
+import datetime as dt
+import xml.etree.ElementTree as ET
 
+today = dt.datetime.now()
+today2 = today.strftime("%Y%m%d")
+today = today.strftime("%Y-%m-%d")
+
+def ai_predict(ticker):
+    pass
 
 
 def chart(request):
-    # covidData()
+    covidData()
     # vaccineData()
     
     return render(request, 'plot.html')
 
 def pluspercent(ticker,toDate):
     # 코로나가 있던 2년을 기준으로 주식 정보를 가져온다.
-    df = fdr.DataReader(ticker,'2020-01-01', '2022-01-19')
+    df = fdr.DataReader(ticker,'2020-01-01', today)
     df.reset_index(inplace=True)
     
     covid = dailycovid.objects.all().values().order_by('intdate')
@@ -81,7 +88,7 @@ def pluspercent(ticker,toDate):
     
 
 def etf(ticker):
-    df = fdr.DataReader(ticker,'2020-01-01', '2022-01-19')
+    df = fdr.DataReader(ticker,'2020-01-01', today)
     df.reset_index(inplace=True)
     df['percent']=df['Close']/df.iloc[0,1]*100
     df['changeRation']=df['Change']*100
@@ -117,7 +124,7 @@ def covidgoingon(date):    #코로나 누적 확진자율, #코로나 증가 세
 #종목 기준으로
 #언제 최저점? = 언제 반등?
 def lowpointday(ticker):
-    df = fdr.DataReader(ticker,'2020-01-01', '2022-01-19')
+    df = fdr.DataReader(ticker,'2020-01-01', today)
     df.reset_index(inplace=True)
     #close 값이 제일 낮은 row의 date 구하기
     lowdayindex= df['Close'].argmin()
@@ -135,7 +142,7 @@ def lowpointday(ticker):
 
 #얼마나 하락 ?
 def lowration(ticker):
-    df = fdr.DataReader(ticker,'2020-01-01', '2022-01-19')
+    df = fdr.DataReader(ticker,'2020-01-01', today)
     df.reset_index(inplace=True)
     lowdayindex= df['Close'].argmin()
     df['percent']=df['Close']/df.iloc[0,1]*100
@@ -156,7 +163,7 @@ def lowration(ticker):
 
 #언제 최고점?
 def highpointday(ticker):
-    df = fdr.DataReader(ticker,'2020-01-01', '2022-01-19')
+    df = fdr.DataReader(ticker,'2020-01-01', today)
     df.reset_index(inplace=True)
     #close 값이 제일 낮은 row의 date 구하기
     highdayindex= df['Close'].argmax()
@@ -178,7 +185,7 @@ def highpointday(ticker):
 
 #얼마나 상승?
 def highration(ticker):
-    df = fdr.DataReader(ticker,'2020-01-01', '2022-01-19')
+    df = fdr.DataReader(ticker,'2020-01-01', today)
     df.reset_index(inplace=True)
     highdayindex= df['Close'].argmax()
     df['percent']=df['Close']/df.iloc[0,1]*100
@@ -272,7 +279,7 @@ def TotalVaccine(request):
 def code_DailyCovid(request):
     # ajax으로 받아온 code
     code = request.GET.get('code')
-    codedata = fdr.DataReader(code,'2020-01-01', '2022-01-19')
+    codedata = fdr.DataReader(code,'2020-01-01', today)
     codedata = codedata.resample('D').first() # 빈 날짜 채워주기
     codedata = codedata.fillna(method= 'ffill') # NaN 값을 앞의 값으로 채우기
     codedata['percent']=codedata['Close']/codedata.iloc[0,1]*100  # 2020-01-01의 종가를 기준으로 비율
@@ -297,7 +304,7 @@ def code_DailyCovid(request):
 def code_totalCovid(request):
     # ajax으로 받아온 code
     code = request.GET.get('code')
-    codedata = fdr.DataReader(code,'2020-01-01', '2022-01-19')
+    codedata = fdr.DataReader(code,'2020-01-01', today)
     codedata = codedata.resample('D').first() # 빈 날짜 채워주기
     codedata = codedata.fillna(method= 'ffill') # NaN 값을 앞의 값으로 채우기
     codedata['percent']=codedata['Close']/codedata.iloc[0,1]*100 # 2020-01-01의 종가를 기준으로 비율
@@ -390,7 +397,7 @@ def covidspread(request):
 
 def covidData():
     #수찬꺼 url
-    url='http://openapi.data.go.kr/openapi/service/rest/Covid19/getCovid19InfStateJson?serviceKey=JvU2PSq9lh1mHsrlM5p7uq9GeNuR4KrBvrHcZO0jIb7unq5lANtM0HkaDA35GqYh3vhuWTXxlWrXqE8AZiqVSA%3D%3D&pageNo=1&numOfRows=1000&startCreateDt=20200120&endCreateDt=20220119'
+    url=f'http://openapi.data.go.kr/openapi/service/rest/Covid19/getCovid19InfStateJson?serviceKey=JvU2PSq9lh1mHsrlM5p7uq9GeNuR4KrBvrHcZO0jIb7unq5lANtM0HkaDA35GqYh3vhuWTXxlWrXqE8AZiqVSA%3D%3D&pageNo=1&numOfRows=1000&startCreateDt=20220120&endCreateDt={today2}'
     
     
     response= requests.get(url)
@@ -398,8 +405,12 @@ def covidData():
     dictionary = xmltodict.parse(contents)   # xml을 dic형식으로 만들고
     json_str= json.dumps(dictionary)   #dic을 json 형식으로 만들었는데 이러면 json str타입이 나옴.
     json_ob= json.loads(json_str)   # json str을 다시 json dict 객체로 만듦.
+    print(json_ob)
     covidData= json_ob['response']['body']['items']['item'] #해당 키 내의 벨류값 찾아옴
-
+    print(covidData)
+    # tree = ET.parse(contents)
+    # root = tree.getroot()
+    # items = root.findall('item:tag')
     # filename='확진 및 사망자.csv'
     # f= open(filename, 'w', encoding='utf-8-sig', newline='')
     # writer= csv.writer(f)
