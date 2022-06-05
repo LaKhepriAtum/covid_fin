@@ -4,11 +4,710 @@
 
 {% block head-block %}
 <link rel="stylesheet" type="text/css" href="{% static 'css/fin.css' %}">
-<script type="text/javascript" src="{% static 'js/fin.js' %}"></script>
+{#<script type="text/javascript" src="{% static '../static/js/fin.js' %}"></script>#}
 {% endblock head-block %}
 
 <!--요기 아래 블럭 속에 쓰면 메인 홈페이지에 바로 나옴-->
 {% block fin-block %}
+    <script>
+    $(function(){
+    // 자동으로 ajax 실행
+    $.ajax({
+        url:"/fin/DailyCovid",
+        type:"get",
+        data:{},
+        dataType:"json",
+        success:function(data){
+                shapeChartData = {
+                labels: data.intdate,
+                datasets: [{
+                    label: '코로나 확진자',
+                    data: data.dailydecide,
+                    borderColor: 'rosybrown',
+                    backgroundColor: 'rosybrown',
+                    borderWidth: 4
+                }]
+            }
+            barChart();
+        },error:function(){
+            alert("실패");
+        }
+    });
+// id = radioBtn을 클릭했을 경우 실행
+$('#radioBtn').click(function () {
+        // checked 상태의 radio의 값을 변수에 저장
+        var radiovalue = $('input:radio[name=covid]:checked').val();
+        // 해당 변수의 값이 무엇인가에 따라 다른 ajax 실행
+        if(radiovalue == 'Total-Covid'){
+            $.ajax({
+            url:"/fin/TotalCovid",
+            type:"get",
+            data:{},
+            dataType:"json",
+            success:function(data){
+                    shapeChartData = {
+                    labels: data.intdate,
+                    datasets: [{
+                        label: '코로나 확진자',
+                        data: data.decideCnt,
+                        borderColor: 'rosybrown',
+                        backgroundColor: 'rosybrown',
+                        borderWidth: 4
+                    }]
+                }
+                barChart();
+            },error:function(){
+                alert("실패");
+            }
+        })}else if(radiovalue == 'Daily-Covid'){
+        $.ajax({
+        url:"/fin/DailyCovid",
+        type:"get",
+        data:{},
+        dataType:"json",
+        success:function(data){
+                shapeChartData = {
+                labels: data.intdate,
+                datasets: [{
+                    label: '코로나 확진자',
+                    data: data.dailydecide,
+                    borderColor: 'rosybrown',
+                    backgroundColor: 'rosybrown',
+                    borderWidth: 4
+                }]
+            }
+            barChart();
+        },error:function(){
+            alert("실패");
+        }
+    })}else if(radiovalue == 'Daily-Vaccine'){
+        $.ajax({
+        url:"/fin/DailyVaccine",
+        type:"get",
+        data:{},
+        dataType:"json",
+        success:function(data){
+                shapeChartData = {
+                labels: data.intdate,
+                datasets: [{
+                    label: '1차백신 접종',
+                    data: data.firstCnt,
+                    borderColor: 'rosybrown',
+                    backgroundColor: 'rosybrown',
+                    borderWidth: 4},
+                    {label: '2차 백신 접종',
+                    data: data.secondCnt,
+                    borderColor: 'red',
+                    backgroundColor: 'red',
+                    borderWidth: 4},
+                    {label: '3차 백신 접종',
+                    data: data.thirdCnt,
+                    borderColor: 'dark',
+                    backgroundColor: 'gray',
+                    borderWidth: 4
+                }]
+            }
+            barChart();
+        },error:function(){
+            alert("실패");
+        }
+    })}else if(radiovalue == 'Total-Vaccine'){
+        $.ajax({
+        url:"/fin/TotalVaccine",
+        type:"get",
+        data:{},
+        dataType:"json",
+        success:function(data){
+                shapeChartData = {
+                labels: data.intdate,
+                datasets: [{
+                    label: '1차백신 누적 접종',
+                    data: data.totalFirstCnt,
+                    borderColor: 'rosybrown',
+                    backgroundColor: 'rosybrown',
+                    borderWidth: 4},
+                    {label: '2차 백신 누적 접종',
+                    data: data.totalSecondCnt,
+                    borderColor: 'red',
+                    backgroundColor: 'red',
+                    borderWidth: 4},
+                    {label: '3차 백신 누적 접종',
+                    data: data.totalThirdCnt,
+                    borderColor: 'gray',
+                    backgroundColor: 'gray',
+                    borderWidth: 4
+                }]
+            }
+            barChart();
+        },error:function(){
+            alert("실패");
+        }
+    })}
+}) //id = radioBtn을 클릭했을 경우 실행 되는 함수
+//차트 그리기
+
+
+$("#fstock1btn").click(function(){
+    var code = $("#fstock1").val()
+    var radiovalue = $('input:radio[name=covid]:checked').val()
+    if(radiovalue=='Daily-Covid'){
+        $.ajax({
+            url:"/fin/code_DailyCovid",
+            type:"GET",
+            data:{'code':code},
+            dataType:"json",
+            success:function(data){
+                shapeChartData ={
+                    labels: data.intdate,
+                    datasets: [{
+                    label: '2020-01-01종가 대비',
+                    yAxisID: 'A',
+                    data: data.codeclose,
+                    borderColor: 'red',
+                    backgroundColor: 'red',
+
+                    }, {
+                    label: '일일 신규 확진자',
+                    yAxisID: 'B',
+                    data: data.dailydecide,
+                    borderColor: 'blue',
+                    backgroundColor: 'blue',
+                    }]
+                },
+
+                chartOptions = {
+                    responsive: true,
+                    interaction: {
+                    mode: 'index',
+                    intersect: false,
+                    },
+                    stacked: false,
+                    plugins: {
+                    title: {
+                        display: true,
+                    }
+                    },
+                    scales: {
+                    yAxes: [{
+                        id: 'A',
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
+                    }, {
+                        id: 'B',
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                    }]
+                    }, grid: {
+                        drawOnChartArea: false,
+                    },
+                }
+                multiaxisChart();
+                // flist의 자식에 li 새로 추가하기
+                $("#flist").append("<li class='text'>" +  data.lowpoint  + data.lowrate  +  data.highpoint  +  data.highrate+"</li>");
+                $("#flist").append("<li class='text'> </li>");
+            },error:function(){
+                alert("종목 코드를 다시 확인해주세요");
+            }
+        })
+    }else if(radiovalue=='Total-Covid'){
+        $.ajax({
+            url:"/fin/code_totalCovid",
+            type:"GET",
+            data:{'code':code},
+            dataType:"json",
+            success:function(data){
+                shapeChartData ={
+                    labels: data.intdate,
+                    datasets: [{
+                    label: '2020-01-01종가 대비',
+                    yAxisID: 'A',
+                    data: data.codeclose,
+                    borderColor: 'red',
+                    backgroundColor: 'red',
+
+                    }, {
+                    label: '누적 확진자',
+                    yAxisID: 'B',
+                    data: data.decideCnt,
+                    borderColor: 'blue',
+                    backgroundColor: 'blue',
+                    }]
+                },
+
+                chartOptions = {
+                    responsive: true,
+                    interaction: {
+                    mode: 'index',
+                    intersect: false,
+                    },
+                    stacked: false,
+                    plugins: {
+                    title: {
+                        display: true,
+                    }
+                    },
+                    scales: {
+                    yAxes: [{
+                        id: 'A',
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
+                    }, {
+                        id: 'B',
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                    }]
+                    },
+                    // grid: {
+                    //     drawOnChartArea: false,
+                    // },
+                }
+                multiaxisChart();
+                $("#flist").append("<li class='text'>" +  data.lowpoint  + data.lowrate  +  data.highpoint  +  data.highrate+"</li>");
+                $("#flist").append("<li class='text'> </li>");
+            },error:function(){
+                alert("종목 코드를 다시 확인해주세요");
+            }
+        })
+
+    }else if(radiovalue=='Total-Vaccine'){
+        $.ajax({
+            url:"/fin/code_totalVaccine",
+            type:"GET",
+            data:{'code':code},
+            dataType:"json",
+            success:function(data){
+                shapeChartData ={
+                    labels: data.intdate,
+                    datasets: [{
+                    label: '2020-01-01종가 대비',
+                    yAxisID: 'A',
+                    data: data.codeclose,
+                    borderColor: 'red',
+                    backgroundColor: 'red',
+
+                    }, {
+                    label: '누적 1차 백신 접종자',
+                    yAxisID: 'B',
+                    data: data.totalFirstCnt,
+                    borderColor: 'blue',
+                    backgroundColor: 'blue',
+                    },{
+                    label: '누적 2차 백신 접종자',
+                    yAxisID: 'B',
+                    data: data.totalSecondCnt,
+                    borderColor: 'gray',
+                    backgroundColor: 'gray',
+                    },{
+                    label: '누적 3차 백신 접종자',
+                    yAxisID: 'B',
+                    data: data.totalThirdCnt,
+                    borderColor: 'yellow',
+                    backgroundColor: 'yellow',
+                    }]
+                },
+
+                chartOptions = {
+                    responsive: true,
+                    interaction: {
+                    mode: 'index',
+                    intersect: false,
+                    },
+                    stacked: false,
+                    plugins: {
+                    title: {
+                        display: true,
+                    }
+                    },
+                    scales: {
+                    yAxes: [{
+                        id: 'A',
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
+                    }, {
+                        id: 'B',
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                    }]
+                    }, grid: {
+                        drawOnChartArea: false,
+                    },
+                }
+                multiaxisChart();
+                $("#flist").append("<li class='text'>" +  data.lowpoint  + data.lowrate  +  data.highpoint  +  data.highrate+"</li>");
+                $("#flist").append("<li class='text'> </li>");
+            },error:function(){
+                alert("종목 코드를 다시 확인해주세요");
+            }
+        })
+
+    }else if(radiovalue=='Daily-Vaccine'){
+        $.ajax({
+            url:"/fin/code_dailyVaccine",
+            type:"GET",
+            data:{'code':code, 'radiovalue':radiovalue},
+            dataType:"json",
+            success:function(data){
+                shapeChartData ={
+                    labels: data.intdate,
+                    datasets: [{
+                    label: '2020-01-01종가 대비',
+                    yAxisID: 'A',
+                    data: data.codeclose,
+                    borderColor: 'red',
+                    backgroundColor: 'red',
+
+                    }, {
+                    label: '일일 1차 백신 접종자',
+                    yAxisID: 'B',
+                    data: data.firstCnt,
+                    borderColor: 'blue',
+                    backgroundColor: 'blue',
+                    },{
+                    label: '일일 2차 백신 접종자',
+                    yAxisID: 'B',
+                    data: data.secondCnt,
+                    borderColor: 'gray',
+                    backgroundColor: 'gray',
+                    },{
+                    label: '일일 3차 백신 접종자',
+                    yAxisID: 'B',
+                    data: data.thirdCnt,
+                    borderColor: 'yellow',
+                    backgroundColor: 'yellow',
+                    }]
+                },
+
+                chartOptions = {
+                    responsive: true,
+                    interaction: {
+                    mode: 'index',
+                    intersect: false,
+                    },
+                    stacked: false,
+                    plugins: {
+                    title: {
+                        display: true,
+                    }
+                    },
+                    scales: {
+                    yAxes: [{
+                        id: 'A',
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
+                    }, {
+                        id: 'B',
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                    }]
+                    }, grid: {
+                        drawOnChartArea: false,
+                    },
+                }
+                multiaxisChart();
+                $("#flist").append("<li class='text'>" +  data.lowpoint  + data.lowrate  +  data.highpoint  +  data.highrate+"</li>");
+                $("#flist").append("<li class='text'> </li>");
+            },error:function(){
+                alert("정확히 입력해 주세요");
+            }
+        })
+
+    }
+
+    })
+    //fstock2btn이 클릭 됐을 때 작동
+$("#fstock2btn").click(function(){
+    // fstock2의 값 가져오기
+    var code = $("#fstock2").val()
+    // fstock3의 값 가져오기
+    var date = $("#fstock3").val()
+    $.ajax({
+        url:"/fin/codeDate",
+        type:"get",
+        // 받아온 값들을 views의 request로 보내기
+        data:{'code':code, 'date':date},
+        dataType:"json",
+        success:function(data){
+            // alert(data.percent['rate'])
+            shapeChartData ={
+                labels: data.percent['Date'],
+                datasets: [{
+                label: '2020-01-01종가 대비',
+                yAxisID: 'A',
+                data: data.percent['Change'],
+                borderColor: 'blue',
+                backgroundColor: "rosybrown",
+                }]
+            },
+            chartOptions = {
+                responsive: true,
+                interaction: {
+                mode: 'index',
+                intersect: false,
+                },
+                stacked: false,
+                plugins: {
+                title: {
+                    display: true,
+                }
+                },
+                scales: {
+                yAxes: [{
+                    id: 'A',
+                    type: 'linear',
+                    display: true,
+                    position: 'left',
+                }]
+                },
+            }
+            multiaxisChart();
+            $("#flist").append("<li class='text'> " +'해당 날짜의 코로나 신규 확진자는 전일 대비 ' +  data.percent['covidrate'] + '% 증감했습니다.   <br> 코로나 신규 확진자의 증감율이 ' + data.percent['changePerfloor']*100 +'%와' +  data.percent['changePerceil']*100  + '% 사이 구간인 경우 해당 종목은 ' + data.percent['rate'] + '%의 확률로 상승했습니다. <br>   위의 그래프는, 코로나의 신규확진자 추세가 ' +data.percent['changePerfloor']*100 +'%와' +  data.percent['changePerceil']*100 +'% 사이인 경우의 주가 증감율을 나타냅니다.'
+            +"</li>")
+            $("#flist").append("<li class='text'> </li>");
+        },
+        error:function(){
+            alert("종목 코드를 다시 확인해주세요");
+        }
+    })
+})
+
+$("#aibtn").click(function(){
+    // fstock2의 값 가져오기
+    var code = $("#fstock4").val()
+    // fstock3의 값 가져오기
+    alert('인공지능의 예측은 투자에 도울을 주는 정보일 뿐 /n 투자를 보장해 주지 않습니다./n(1 ~ 3 분 소요)')
+    $.ajax({
+        url:"/fin/aipredict",
+        type:"get",
+        // 받아온 값들을 views의 request로 보내기
+        data:{'code':code},
+        dataType:"json",
+        success:function(data) {
+            alert('인공지능이 예측한 내일의 가격은 '+data.today_close_value+'원 입니다.')
+        },
+        error:function(){
+            alert("종목 코드를 다시 확인해 주세요");
+        }
+    })
+})
+
+$("#radioBtn3").click(function(){
+    // fstock2의 값 가져오기
+    var start = $("#fcovid2").val()
+    // fstock3의 값 가져오기
+    var end = $("#fcovid3").val()
+    var code = $("#fcovid4").val()
+    var radiovalue = $('input:radio[name=covid]:checked').val()
+    alert("기간은 YYYY-MM-DD 형식으로 입력해 주세요.");
+    if(radiovalue=='Daily-Covid'){
+        $.ajax({
+            url:"/fin/periodselect",
+            type:"GET",
+            data:{'start':start, 'end':end,'code':code},
+            dataType:"json",
+            success:function(data){
+                shapeChartData ={
+                    labels: data.intdate,
+                    datasets: [{
+                    label: '선택 기간 주가 추이',
+                    yAxisID: 'A',
+                    data: data.codeclose,
+                    borderColor: 'red',
+                    backgroundColor: 'red',
+
+                    }, {
+                    label: '일일 신규 확진자',
+                    yAxisID: 'B',
+                    data: data.dailydecide,
+                    borderColor: 'blue',
+                    backgroundColor: 'blue',
+                    }]
+                },
+
+                chartOptions = {
+                    responsive: true,
+                    interaction: {
+                    mode: 'index',
+                    intersect: false,
+                    },
+                    stacked: false,
+                    plugins: {
+                    title: {
+                        display: true,
+                    }
+                    },
+                    scales: {
+                    yAxes: [{
+                        id: 'A',
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
+                    }, {
+                        id: 'B',
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                    }]
+                    }, grid: {
+                        drawOnChartArea: false,
+                    },
+                }
+                multiaxisChart();
+            },error:function(){
+                alert("입력을 확인해 주세요");
+            }
+        })
+    }else if(radiovalue=='Total-Covid'){
+        $.ajax({
+            url:"/fin/periodselect_total",
+            type:"GET",
+            data:{'start':start, 'end':end,'code':code},
+            dataType:"json",
+            success:function(data){
+                shapeChartData ={
+                    labels: data.intdate,
+                    datasets: [{
+                    label: '선택 기간 주가 추이',
+                    yAxisID: 'A',
+                    data: data.codeclose,
+                    borderColor: 'red',
+                    backgroundColor: 'red',
+
+                    }, {
+                    label: '누적 확진자',
+                    yAxisID: 'B',
+                    data: data.decideCnt,
+                    borderColor: 'blue',
+                    backgroundColor: 'blue',
+                    }]
+                },
+
+                chartOptions = {
+                    responsive: true,
+                    interaction: {
+                    mode: 'index',
+                    intersect: false,
+                    },
+                    stacked: false,
+                    plugins: {
+                    title: {
+                        display: true,
+                    }
+                    },
+                    scales: {
+                    yAxes: [{
+                        id: 'A',
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
+                    }, {
+                        id: 'B',
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                    }]
+                    }, grid: {
+                        drawOnChartArea: false,
+                    },
+                }
+                multiaxisChart();
+            },error:function(){
+                alert("입력을 확인해 주세요");
+            }
+        })
+    }
+
+})
+
+
+// fresetbnt 클릭 식 작동
+$("#fresetbnt").click(function(){
+    // flist를 삭제
+    $('#flist').remove();
+    // id ftext 자식으로 <ul id="flist"><li></li></ul> 생성
+    $('#ftext').append('<ul id="flist"><li></li></ul>');
+})
+
+$("#radioBtn2").click(function(){
+    var date = $("#fcovid1").val()
+    $.ajax({
+        url:"/fin/covidspread",
+        type:"get",
+        data:{'date':date},
+        dataType:"json",
+        success:function(data){
+            $("#flist").append("<li class='text'> 전국 코로나 확진율 : "+data.spread['tocovidPer']+" 지난 7일 평균 코로나 확진자 대비 확진자 증감률: "+data.spread['covidCompare']+"%</li>")
+            $("#flist").append("<li class='text'> </li>");
+        },
+        error:function(){
+            alert("실패");
+        }
+
+})
+})
+
+$("#fstock3btn").click(function(){
+    var ticker = $("#fstock5").val()
+    $.ajax({
+        url:"/fin/ticker_search",
+        type:"get",
+        data:{'ticker':ticker},
+        dataType:"json",
+        success:function(data){
+            alert(ticker+'의 종목 코드는 '+data.ticker+'입니다.')
+        },
+        error:function(){
+            alert("정확한 회사명을 기입하시오");
+        }
+
+})
+})
+
+})
+
+
+function barChart() {
+    // id myChart의 html 삭제
+    $('#myChart').remove();
+    // id fchart의 자식으로 <canvas id="myChart"><canvas> 생성
+    $('#fchart').append('<canvas id="myChart"></canvas>');
+    var ctx = document.getElementById('myChart').getContext('2d');
+    var myChart = new Chart(ctx, {
+    type: 'bar',
+    data: shapeChartData,
+        options:  {
+            scales: {
+                yAxes: [{
+                    ticks: {
+                        beginAtZero: true
+                    }
+                }]
+            }
+        }
+    });
+}//createChart
+
+function multiaxisChart(){
+    // id myChart의 html 삭제
+    $('#myChart').remove();
+    // id fchart의 자식으로 <canvas id="myChart"><canvas> 생성
+    $('#fchart').append('<canvas id="myChart"></canvas>');
+    var ctx = document.getElementById('myChart').getContext('2d');
+    var chart = new Chart(ctx, {
+        type: 'bar',
+        data: shapeChartData,
+        options: chartOptions
+    })
+}
+
+    </script>
 <div id='fbody'>
     <div id = 'fhead'>
         <div id = 'ftitle'>
@@ -17,7 +716,7 @@
         <div id = 'finfo'>
             <h3>좌측의 y축은 코로나 발생 직전인 2020년 1월 20일의 주가를 100% 기준으로 합니다. <br>
                 우측의 y축은 코로나 발생추이에 따른 인구수입니다.<br>
-                x축은 국내 코로나 환자 첫 발생일인 2020년 1월 20일부터 2022년 1월 19일까지의 시기를 나타냅니다.</h3>
+                x축은 국내 코로나 환자 첫 발생일인 2020년 1월 20일부터입니다.</h3>
         </div>
         <div id = 'freset'>
             <form action="" method="post" name="freset" id="fresetfrom"> 
@@ -28,6 +727,17 @@
     </div>
     <div id = 'fmain'>
             <div  id = 'fstock'>
+                <form action="" method="post" name="fstock4" id="fstockfrom4" class='finputbox'>
+                    {% csrf_token %}
+                    <div id = 'fuserinput1'  class= 'finputlabel'>
+                        <label>*종목 코드(ticker) 검색</label><br>
+                    </div>
+
+                    <label>회사 명</label><br>
+                    <input type="text" id="fstock5">
+                    <input type="button" id = 'fstock3btn' value="GO">
+                </form>
+                <br>
                 <form action="" method="post" name="fstock1" id="fstockfrom1" class='finputbox'> 
                     {% csrf_token %}
                     <div id = 'fuserinput1'  class= 'finputlabel'>
@@ -47,9 +757,21 @@
                     </div>
                     <label>종목 코드(ticker)</label><br>
                     <input type="text" id="fstock2"><br>
-                    <label>20200120~20220119 사이의 날짜</label><br>
+                    <label>2020년 1월 20일 이후의 이후의 날짜</label><br>
                     <input type="text" id="fstock3">
                     <input type="button"  value="GO" id = 'fstock2btn'>
+                </form>
+                <br>
+                <form action="" method="post" name="fstock3" id="fstockfrom3" class='finputbox'>
+                    {% csrf_token %}
+                    <div id = 'fuserinput3'  class= 'finputlabel'>
+                        <label>*인공지능의 예측</label><br>
+                    </div>
+
+                    <label>종목 코드(ticker)</label><br>
+                    <input type="text" id="fstock4">
+                    <input type="button"  value="GO" id = 'aibtn'>
+
                 </form>
             </div>
             <div  id = 'fchart'>
@@ -76,9 +798,23 @@
                     <div id = 'fuserinput4' class= 'finputlabel'>
                         <label>*확진자 추세</label><br>
                     </div>
-                    <label>20200120~20220119 사이의 날짜</label><br>
+                    <label>2020년 1월 20일 이후의 날짜</label><br>
                     <input type="text" id="fcovid1"><br>
                     <input type="button" value="Submit" id="radioBtn2">
+                </form>
+                <br>
+                <form action="" method="post" name="fcovidselect" id="fcovidselectfrom" class='finputbox'>
+                    {% csrf_token %}
+                    <div id = 'fuserinput5' class= 'finputlabel'>
+                        <label>*기간 선택</label><br>
+                    </div>
+                    <label>2020년 1월 20일 이후의 날짜 - 시작</label><br>
+                    <input type="text" id="fcovid2"><br>
+                    <label>2020년 1월 20일 이후의 날짜 - 끝</label><br>
+                    <input type="text" id="fcovid3"><br>
+                    <label>종목 코드(ticker)</label><br>
+                    <input type="text" id="fcovid4"><br>
+                    <input type="button" value="Submit" id="radioBtn3">
                 </form>
             </div>
     </div>

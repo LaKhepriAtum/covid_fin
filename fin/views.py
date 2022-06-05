@@ -1,30 +1,102 @@
 import csv
 from django.http import JsonResponse
 from django.shortcuts import render
-import requests
 import json
 import xmltodict
 from fin.models import dailycovid , dailyvaccine
-import pandas as pd 
-import matplotlib.pyplot as plt
 import pandas as pd
-import FinanceDataReader as fdr
 from dateutil.parser import parse
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib 
+import matplotlib
 import pandas as pd
 import FinanceDataReader as fdr
-from dateutil.parser import parse
 import datetime as dt
-import xml.etree.ElementTree as ET
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import *
+from sklearn.preprocessing import MinMaxScaler
+from sklearn.model_selection import train_test_split
+from tensorflow.keras.callbacks import EarlyStopping
+from bs4 import BeautifulSoup
+import requests
+import re
 
 today = dt.datetime.now()
 today2 = today.strftime("%Y%m%d")
 today = today.strftime("%Y-%m-%d")
+lastday = 20220531
+headers = {'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.75 Safari/537.36'}
 
-def ai_predict(ticker):
-    pass
+def aipredict(request):
+    code = request.GET.get('code')
+    print('debug01')
+    codedata = fdr.DataReader(code, '2020-01-20', today)
+    codedata = codedata.resample('D').first()  # 빈 날짜 채워주기
+    codedata = codedata.fillna(method='ffill')  # NaN 값을 앞의 값으로 채우기
+    codedata['percent'] = codedata['Close'] / codedata.iloc[0, 1] * 100  # 2020-01-01의 종가를 기준으로 비율
+    codedata.reset_index(inplace=True)
+    covid = dailycovid.objects.all().values().order_by('intdate')
+    covid = pd.DataFrame(covid)
+    covid.columns = ['strdate', 'intdate', 'deathCnt', 'decideCnt']
+    covid['datetype'] = pd.to_datetime(covid['intdate'], format="%Y%m%d")
+    # 오늘 누적 확진자 - 어제 누적 확진자(diff())-> 하루 확진다, 값이 없을 경우 0으로 대체
+    covid['dailydecide'] = covid['decideCnt'].diff().fillna(0)
+    # (다음행 - 현재행)÷현재행
+    covid['dailydiff'] = covid['dailydecide'].pct_change().fillna(0)
+    covid['dailydiff'] = covid['dailydiff'].replace([np.inf],0)
+    codedata['dailydecide'] = covid['dailydecide']
+    codedata['dailydiff'] = covid['dailydiff']
+    minmaxscaler = MinMaxScaler()
+    print('debug03')
+    codedata.set_index('Date', inplace=True)
+    scaled_data = minmaxscaler.fit_transform(codedata)
+    print(codedata.tail())
+    scaler = MinMaxScaler()
+    close_data = scaler.fit_transform(codedata['Close'].values.reshape(-1,1))
+    # 종가만 다시 원 상태로 돌릴 MinMaxScaler pickle로
+    print(scaled_data.shape)
+    sequence_X = []
+    sequence_Y = []
+
+    for i in range(len(scaled_data) - 30):
+        x = scaled_data[i:i + 30]
+        y = scaled_data[i + 30] [3] # 종가만 예측
+        sequence_X.append(x)
+        sequence_Y.append(y)
+
+    sequence_X = np.array(sequence_X)
+    sequence_Y = np.array(sequence_Y)
+    print(sequence_X[0])
+    print(sequence_Y[0])
+    print(sequence_X.shape)
+    print(sequence_Y.shape)
+    X_train, X_test, Y_train, Y_test = train_test_split(
+        sequence_X, sequence_Y, test_size=0.2)
+    print(X_train.shape, Y_train.shape)
+    print(X_test.shape, Y_test.shape)
+    model = Sequential()
+    model.add(LSTM(50, input_shape=(30, 9),  # scaled_data.shape의 형식과 맞게
+                   activation='tanh'))  # LSTM은 activation으로 tanh, tanh는 -1 ~ 1 사이의 값
+    model.add(Flatten())
+    model.add(Dense(1))  # 예측한 값을 그래도 써야 하기 때문에 마지막에는 activation을 사용하지 않는다
+    model.compile(loss='mse', optimizer='adam')  # 분류가 아니므로 metrics를 안 쓴다.
+    model.summary()
+    early_stopping = EarlyStopping(monitor='val_loss', patience=5)
+    fit_hist = model.fit(X_train, Y_train, batch_size=128, epochs=500, callbacks=[early_stopping], verbose=1,
+                         validation_data=(X_test, Y_test), shuffle=False)
+    last_data_30 = scaled_data[-30:].reshape(1, 30, 9)
+    today_close = model.predict(last_data_30)
+    print(today_close)
+    today_close_value = scaler.inverse_transform(today_close)
+    today_close_value = today_close_value.tolist()
+    today_close_value = today_close_value[0][0]
+    print(today_close_value)
+    print(type(today_close_value))
+    data={'code':code, 'today_close_value':round(today_close_value)}
+    print('debug02')
+    return JsonResponse(data)
+
+
 
 
 def chart(request):
@@ -395,9 +467,77 @@ def covidspread(request):
     context = {'spread':spread}
     return JsonResponse(context)
 
+def periodselect(request):
+    code = request.GET.get('code')
+    start = request.GET.get('start')
+    end = request.GET.get('end')
+    covid = dailycovid.objects.all().values().order_by('intdate')
+    covid = pd.DataFrame(covid)
+    covid.columns = ['strdate', 'intdate','deathCnt', 'decideCnt']
+    covid['intdate'] = pd.to_datetime(covid['intdate'], format="%Y%m%d")
+    covid_start = covid['intdate'] >= start
+    covid_end = covid['intdate'] <= end
+    covid = covid[covid_start & covid_end]
+    covid['intdate'] = covid['intdate'].astype(str)
+    covid['dailydecide']=covid['decideCnt'].diff().fillna(0)
+    dailydecide = covid['dailydecide'].values.tolist()
+    intdate = covid['intdate'].values.tolist()
+    print(type(code))
+    if code == '':
+        codeclose = 0
+        context = {'codeclose': codeclose, 'intdate': intdate, 'dailydecide': dailydecide}
+        return JsonResponse(context)
+    codedata = fdr.DataReader(code, start, end)
+    codedata = codedata.resample('D').first()  # 빈 날짜 채워주기
+    codedata = codedata.fillna(method='ffill')  # NaN 값을 앞의 값으로 채우기
+    codeclose = codedata['Close'].values.tolist()
+    codedata.reset_index(inplace=True)
+    context = {'codeclose':codeclose,'intdate':intdate,'dailydecide':dailydecide}
+    return JsonResponse(context)
+
+def periodselect_total(request):
+    code = request.GET.get('code')
+    start = request.GET.get('start')
+    end = request.GET.get('end')
+    covid = dailycovid.objects.all().values().order_by('intdate')
+    covid = pd.DataFrame(covid)
+    covid.columns = ['strdate', 'intdate','deathCnt', 'decideCnt']
+    covid['intdate'] = pd.to_datetime(covid['intdate'], format="%Y%m%d")
+    covid_start = covid['intdate'] >= start
+    covid_end = covid['intdate'] <= end
+    covid = covid[covid_start & covid_end]
+    covid['intdate'] = covid['intdate'].astype(str)
+    decideCnt = covid['decideCnt'].values.tolist()
+    intdate = covid['intdate'].values.tolist()
+    print(type(code))
+    if code == '':
+        codeclose = 0
+        context = {'codeclose': codeclose, 'intdate': intdate, 'decideCnt': decideCnt}
+        return JsonResponse(context)
+    codedata = fdr.DataReader(code, start, end)
+    codedata = codedata.resample('D').first()  # 빈 날짜 채워주기
+    codedata = codedata.fillna(method='ffill')  # NaN 값을 앞의 값으로 채우기
+    codeclose = codedata['Close'].values.tolist()
+    codedata.reset_index(inplace=True)
+    context = {'codeclose':codeclose,'intdate':intdate,'decideCnt':decideCnt}
+    return JsonResponse(context)
+
+def ticker_search(request):
+    ticker = request.GET.get('ticker')
+    ticker = ticker.replace(" ", "")
+    print(ticker)
+    url = f'https://kr.investing.com/search/?q={ticker}'
+    res = requests.get(url, headers=headers)
+    soup = BeautifulSoup(res.text, 'html.parser')
+    ticker = soup.find("a", {"class": "js-inner-all-results-quote-item row"})
+    ticker = ticker.find('span',{ "class":"second"})
+    ticker = ticker.text
+    context = {'ticker':ticker}
+    return JsonResponse(context)
+
 def covidData():
     #수찬꺼 url
-    url=f'http://openapi.data.go.kr/openapi/service/rest/Covid19/getCovid19InfStateJson?serviceKey=JvU2PSq9lh1mHsrlM5p7uq9GeNuR4KrBvrHcZO0jIb7unq5lANtM0HkaDA35GqYh3vhuWTXxlWrXqE8AZiqVSA%3D%3D&pageNo=1&numOfRows=1000&startCreateDt=20220120&endCreateDt={today2}'
+    url=f'http://openapi.data.go.kr/openapi/service/rest/Covid19/getCovid19InfStateJson?serviceKey=JvU2PSq9lh1mHsrlM5p7uq9GeNuR4KrBvrHcZO0jIb7unq5lANtM0HkaDA35GqYh3vhuWTXxlWrXqE8AZiqVSA%3D%3D&pageNo=1&numOfRows=1000&startCreateDt={lastday}&endCreateDt={today2}'
     
     
     response= requests.get(url)

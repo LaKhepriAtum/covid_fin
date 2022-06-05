@@ -18,4 +18,8 @@ urlpatterns = [
     path('TotalVaccine/', views.TotalVaccine, name= 'TotalVaccine' ),
     path('codeDate/', views.codeDate, name= 'codeDate' ),
     path('covidspread/', views.covidspread, name= 'covidspread' ),
+    path('aipredict/', views.aipredict, name= 'aipredict' ),
+    path('periodselect/', views.periodselect, name= 'periodselect' ),
+    path('periodselect_total/', views.periodselect_total, name= 'periodselect_total' ),
+    path('ticker_search/', views.ticker_search, name= 'ticker_search' )
 ]
