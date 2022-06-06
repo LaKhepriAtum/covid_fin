@@ -29,7 +29,6 @@ headers = {'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/5
 
 def aipredict(request):
     code = request.GET.get('code')
-    print('debug01')
     codedata = fdr.DataReader(code, '2020-01-20', today)
     codedata = codedata.resample('D').first()  # 빈 날짜 채워주기
     codedata = codedata.fillna(method='ffill')  # NaN 값을 앞의 값으로 채우기
@@ -47,7 +46,6 @@ def aipredict(request):
     codedata['dailydecide'] = covid['dailydecide']
     codedata['dailydiff'] = covid['dailydiff']
     minmaxscaler = MinMaxScaler()
-    print('debug03')
     codedata.set_index('Date', inplace=True)
     scaled_data = minmaxscaler.fit_transform(codedata)
     print(codedata.tail())
@@ -93,7 +91,6 @@ def aipredict(request):
     print(today_close_value)
     print(type(today_close_value))
     data={'code':code, 'today_close_value':round(today_close_value)}
-    print('debug02')
     return JsonResponse(data)
 
 
