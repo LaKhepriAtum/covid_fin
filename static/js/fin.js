@@ -403,7 +403,7 @@ $("#fstock1btn").click(function(){
                 $("#flist").append("<li class='text'>" +  data.lowpoint  + data.lowrate  +  data.highpoint  +  data.highrate+"</li>");
                 $("#flist").append("<li class='text'> </li>");
             },error:function(){
-                alert("정확히 입력해 주세요");
+                alert("종목 코드를 다시 확인해 주세요.");
             }
         })
 
@@ -414,6 +414,7 @@ $("#fstock1btn").click(function(){
 $("#fstock2btn").click(function(){
     // fstock2의 값 가져오기
     var code = $("#fstock2").val()
+    alert(code)
     // fstock3의 값 가져오기
     var date = $("#fstock3").val()
     $.ajax({
@@ -461,156 +462,17 @@ $("#fstock2btn").click(function(){
             $("#flist").append("<li class='text'> </li>");
         },
         error:function(){
-            alert("종목 코드를 다시 확인해주세요");
+            alert("실패");
         }
     })
 })
 
 $("#aibtn").click(function(){
     // fstock2의 값 가져오기
+    alert('성공')
     var code = $("#fstock4").val()
     // fstock3의 값 가져오기
-    alert('인공지능의 예측은 투자에 도울을 주는 정보일 뿐 /n 투자를 보장해 주지 않습니다./n(1 ~ 3 분 소요)')
-    $.ajax({
-        url:"/fin/aipredict",
-        type:"get",
-        // 받아온 값들을 views의 request로 보내기
-        data:{'code':code},
-        dataType:"json",
-        success:function(data) {
-            alert('인공지능이 예측한 내일의 가격은 '+data.today_close_value+'원 입니다.')
-        },
-        error:function(){
-            alert("종목 코드를 다시 확인해 주세요");
-        }
-    })
-})
-
-$("#radioBtn3").click(function(){
-    // fstock2의 값 가져오기
-    var start = $("#fcovid2").val()
-    // fstock3의 값 가져오기
-    var end = $("#fcovid3").val()
-    var code = $("#fcovid4").val()
-    var radiovalue = $('input:radio[name=covid]:checked').val()
-    alert("기간은 YYYY-MM-DD 형식으로 입력해 주세요.");
-    if(radiovalue=='Daily-Covid'){
-        $.ajax({
-            url:"/fin/periodselect",
-            type:"GET",
-            data:{'start':start, 'end':end,'code':code},
-            dataType:"json",
-            success:function(data){
-                shapeChartData ={
-                    labels: data.intdate,
-                    datasets: [{
-                    label: '선택 기간 주가 추이',
-                    yAxisID: 'A',
-                    data: data.codeclose,
-                    borderColor: 'red',
-                    backgroundColor: 'red',
-
-                    }, {
-                    label: '일일 신규 확진자',
-                    yAxisID: 'B',
-                    data: data.dailydecide,
-                    borderColor: 'blue',
-                    backgroundColor: 'blue',
-                    }]
-                },
-
-                chartOptions = {
-                    responsive: true,
-                    interaction: {
-                    mode: 'index',
-                    intersect: false,
-                    },
-                    stacked: false,
-                    plugins: {
-                    title: {
-                        display: true,
-                    }
-                    },
-                    scales: {
-                    yAxes: [{
-                        id: 'A',
-                        type: 'linear',
-                        display: true,
-                        position: 'left',
-                    }, {
-                        id: 'B',
-                        type: 'linear',
-                        display: true,
-                        position: 'right',
-                    }]
-                    }, grid: {
-                        drawOnChartArea: false,
-                    },
-                }
-                multiaxisChart();
-            },error:function(){
-                alert("입력을 확인해 주세요");
-            }
-        })
-    }else if(radiovalue=='Total-Covid'){
-        $.ajax({
-            url:"/fin/periodselect_total",
-            type:"GET",
-            data:{'start':start, 'end':end,'code':code},
-            dataType:"json",
-            success:function(data){
-                shapeChartData ={
-                    labels: data.intdate,
-                    datasets: [{
-                    label: '선택 기간 주가 추이',
-                    yAxisID: 'A',
-                    data: data.codeclose,
-                    borderColor: 'red',
-                    backgroundColor: 'red',
-
-                    }, {
-                    label: '누적 확진자',
-                    yAxisID: 'B',
-                    data: data.decideCnt,
-                    borderColor: 'blue',
-                    backgroundColor: 'blue',
-                    }]
-                },
-
-                chartOptions = {
-                    responsive: true,
-                    interaction: {
-                    mode: 'index',
-                    intersect: false,
-                    },
-                    stacked: false,
-                    plugins: {
-                    title: {
-                        display: true,
-                    }
-                    },
-                    scales: {
-                    yAxes: [{
-                        id: 'A',
-                        type: 'linear',
-                        display: true,
-                        position: 'left',
-                    }, {
-                        id: 'B',
-                        type: 'linear',
-                        display: true,
-                        position: 'right',
-                    }]
-                    }, grid: {
-                        drawOnChartArea: false,
-                    },
-                }
-                multiaxisChart();
-            },error:function(){
-                alert("입력을 확인해 주세요");
-            }
-        })
-    }
+    alert(code)
 
 })
 
@@ -640,7 +502,6 @@ $("#radioBtn2").click(function(){
 
 })
 })
-
 $("#fstock3btn").click(function(){
     var ticker = $("#fstock5").val()
     $.ajax({
@@ -657,6 +518,7 @@ $("#fstock3btn").click(function(){
 
 })
 })
+
 
 })
 

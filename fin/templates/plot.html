@@ -482,7 +482,8 @@ $("#aibtn").click(function(){
     // fstock2의 값 가져오기
     var code = $("#fstock4").val()
     // fstock3의 값 가져오기
-    alert('인공지능의 예측은 투자에 도울을 주는 정보일 뿐 /n 투자를 보장해 주지 않습니다./n(1 ~ 3 분 소요)')
+    alert('인공지능의 예측은 투자에 도울을 주는 정보일 뿐 \n투자를 보장해 주지 않습니다\n(1 ~ 3 분 소요)')
+    openLoading()
     $.ajax({
         url:"/fin/aipredict",
         type:"get",
@@ -490,9 +491,29 @@ $("#aibtn").click(function(){
         data:{'code':code},
         dataType:"json",
         success:function(data) {
+            closeLoading()
             alert('인공지능이 예측한 내일의 가격은 '+data.today_close_value+'원 입니다.')
+            shapeChartData = {
+                labels: data.labeldate,
+                datasets: [{
+                    label: '인공지능이 예측한 지난 30일',
+                    data: data.preds,
+                    borderColor: 'skyblue',
+                    backgroundColor: 'skyblue',
+                    fill: false,
+                    borderWidth: 1},
+                    {label: '실제 주가 추이',
+                    data: data.Y_test,
+                    borderColor: 'red',
+                    backgroundColor: 'red',
+                        fill: false,
+                    borderWidth: 1}
+                    ]
+            }
+            plotChart();
         },
         error:function(){
+            closeLoading()
             alert("종목 코드를 다시 확인해 주세요");
         }
     })
@@ -661,7 +682,10 @@ $("#fstock3btn").click(function(){
         data:{'ticker':ticker},
         dataType:"json",
         success:function(data){
-            alert(ticker+'의 종목 코드는 '+data.ticker+'입니다.')
+            alert(ticker+'의 종목 코드는 '+data.ticker+'입니다.');
+            $("#fcovid4").val(data.ticker);
+            $("#fstock4").val(data.ticker);
+            $("#fstock2").val(data.ticker);
         },
         error:function(){
             alert("정확한 회사명을 기입하시오");
@@ -672,6 +696,36 @@ $("#fstock3btn").click(function(){
 
 })
 
+function openLoading() {
+    //화면 높이와 너비를 구합니다.
+    let maskHeight = $(document).height();
+    let maskWidth = window.document.body.clientWidth;
+    //출력할 마스크를 설정해준다.
+    let mask ="<div id='mask' style='position:absolute; z-index:9000; background-color:#000000; display:none; left:0; top:0;'></div>";
+    // 로딩 이미지 주소 및 옵션
+    let loadingImg ='';
+    loadingImg += "<div id='loadingImg' style='position:absolute; top: calc(50% - (200px / 2)); width:100%; z-index:99999999;'>";
+    loadingImg += " <img src='https://loadingapng.com/animation.php?image=4&fore_color=000000&back_color=FFFFFF&size=128x128&transparency=1&image_type=0&uncacher=75.5975991029623' style='position: relative; display: block; margin: 0px auto;'/>";
+    loadingImg += "</div>";
+    //레이어 추가
+    $('body')
+    		.append(mask)
+    		.append(loadingImg)
+    //마스크의 높이와 너비로 전체 화면을 채운다.
+    $('#mask').css({
+            'width' : maskWidth,
+            'height': maskHeight,
+            'opacity' :'0.3'
+    });
+    //마스크 표시
+    $('#mask').show();
+    //로딩 이미지 표시
+    $('#loadingImg').show();
+}
+function closeLoading() {
+    $('#mask, #loadingImg').hide();
+    $('#mask, #loadingImg').empty();
+}
 
 function barChart() {
     // id myChart의 html 삭제
@@ -683,6 +737,38 @@ function barChart() {
     type: 'bar',
     data: shapeChartData,
         options:  {
+            scales: {
+                yAxes: [{
+                    ticks: {
+                        beginAtZero: true
+                    }
+                }]
+            }
+        }
+    });
+}//createChart
+
+function plotChart() {
+    // id myChart의 html 삭제
+    $('#myChart').remove();
+    // id fchart의 자식으로 <canvas id="myChart"><canvas> 생성
+    $('#fchart').append('<canvas id="myChart"></canvas>');
+    var ctx = document.getElementById('myChart').getContext('2d');
+    var myChart = new Chart(ctx, {
+    type: 'line',
+    data: shapeChartData,
+        options:  {tooltips: {
+            mode: 'index',
+            intersect: false,
+        },
+        hover: {
+            mode: 'nearest',
+            intersect: true
+        },elements: {
+                        line: {
+                                fill: false
+                        }
+                    },
             scales: {
                 yAxes: [{
                     ticks: {

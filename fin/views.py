@@ -24,7 +24,7 @@ import re
 today = dt.datetime.now()
 today2 = today.strftime("%Y%m%d")
 today = today.strftime("%Y-%m-%d")
-lastday = 20220531
+lastday = 20220604
 headers = {'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.75 Safari/537.36'}
 
 def aipredict(request):
@@ -45,8 +45,10 @@ def aipredict(request):
     covid['dailydiff'] = covid['dailydiff'].replace([np.inf],0)
     codedata['dailydecide'] = covid['dailydecide']
     codedata['dailydiff'] = covid['dailydiff']
-    minmaxscaler = MinMaxScaler()
     codedata.set_index('Date', inplace=True)
+    codedata = codedata.fillna( method='bfill')
+    print(codedata.isnull().sum())
+    minmaxscaler = MinMaxScaler()
     scaled_data = minmaxscaler.fit_transform(codedata)
     print(codedata.tail())
     scaler = MinMaxScaler()
@@ -80,17 +82,28 @@ def aipredict(request):
     model.compile(loss='mse', optimizer='adam')  # 분류가 아니므로 metrics를 안 쓴다.
     model.summary()
     early_stopping = EarlyStopping(monitor='val_loss', patience=5)
-    fit_hist = model.fit(X_train, Y_train, batch_size=128, epochs=500, callbacks=[early_stopping], verbose=1,
+    fit_hist = model.fit(X_train, Y_train, batch_size=128, epochs=20, callbacks=[early_stopping], verbose=1,
                          validation_data=(X_test, Y_test), shuffle=False)
     last_data_30 = scaled_data[-30:].reshape(1, 30, 9)
     today_close = model.predict(last_data_30)
-    print(today_close)
+    pred = model.predict(X_test)
+    pred = scaler.inverse_transform(pred)
+    pred = pred[-30:].tolist()
+    Y_test = Y_test.reshape(-1, 1)
+    Y_test = scaler.inverse_transform(Y_test)
+    Y_test = Y_test[-30:]
+    codedata.date = codedata.index.astype(str)
+    labeldate = codedata.date[-30:].values.tolist()
+    # print(pred)
+    preds = []
+    for i in pred:
+        preds.append(i[0])
+    Y_test = Y_test.tolist()
     today_close_value = scaler.inverse_transform(today_close)
     today_close_value = today_close_value.tolist()
     today_close_value = today_close_value[0][0]
     print(today_close_value)
-    print(type(today_close_value))
-    data={'code':code, 'today_close_value':round(today_close_value)}
+    data={'code':code, 'today_close_value':round(today_close_value), 'preds':preds, 'Y_test':Y_test, 'labeldate': labeldate}
     return JsonResponse(data)
 
 
@@ -521,7 +534,7 @@ def periodselect_total(request):
 
 def ticker_search(request):
     ticker = request.GET.get('ticker')
-    ticker = ticker.replace(" ", "")
+    # ticker = ticker.replace(" ", "")
     print(ticker)
     url = f'https://kr.investing.com/search/?q={ticker}'
     res = requests.get(url, headers=headers)
