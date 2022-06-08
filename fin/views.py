@@ -24,7 +24,7 @@ import re
 today = dt.datetime.now()
 today2 = today.strftime("%Y%m%d")
 today = today.strftime("%Y-%m-%d")
-lastday = 20220604
+lastday = 20220606
 headers = {'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.75 Safari/537.36'}
 
 def aipredict(request):
@@ -82,7 +82,7 @@ def aipredict(request):
     model.compile(loss='mse', optimizer='adam')  # 분류가 아니므로 metrics를 안 쓴다.
     model.summary()
     early_stopping = EarlyStopping(monitor='val_loss', patience=5)
-    fit_hist = model.fit(X_train, Y_train, batch_size=128, epochs=20, callbacks=[early_stopping], verbose=1,
+    fit_hist = model.fit(X_train, Y_train, batch_size=128, epochs=500, callbacks=[early_stopping], verbose=1,
                          validation_data=(X_test, Y_test), shuffle=False)
     last_data_30 = scaled_data[-30:].reshape(1, 30, 9)
     today_close = model.predict(last_data_30)
