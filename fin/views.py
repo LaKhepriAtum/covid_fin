@@ -45,6 +45,7 @@ def aipredict(request):
     covid['dailydiff'] = covid['dailydiff'].replace([np.inf],0)
     codedata['dailydecide'] = covid['dailydecide']
     codedata['dailydiff'] = covid['dailydiff']
+    codedata = codedata.fillna(method = 'ffill')
     codedata.set_index('Date', inplace=True)
     codedata = codedata.fillna( method='bfill')
     print(codedata.isnull().sum())
@@ -81,11 +82,12 @@ def aipredict(request):
     model.add(Dense(1))  # 예측한 값을 그래도 써야 하기 때문에 마지막에는 activation을 사용하지 않는다
     model.compile(loss='mse', optimizer='adam')  # 분류가 아니므로 metrics를 안 쓴다.
     model.summary()
-    early_stopping = EarlyStopping(monitor='val_loss', patience=5)
+    early_stopping = EarlyStopping(monitor='val_loss', patience=20)
     fit_hist = model.fit(X_train, Y_train, batch_size=128, epochs=500, callbacks=[early_stopping], verbose=1,
                          validation_data=(X_test, Y_test), shuffle=False)
     last_data_30 = scaled_data[-30:].reshape(1, 30, 9)
     today_close = model.predict(last_data_30)
+    print(X_test)
     pred = model.predict(X_test)
     pred = scaler.inverse_transform(pred)
     pred = pred[-30:].tolist()
@@ -93,7 +95,7 @@ def aipredict(request):
     Y_test = scaler.inverse_transform(Y_test)
     Y_test = Y_test[-30:]
     codedata.date = codedata.index.astype(str)
-    labeldate = codedata.date[-30:].values.tolist()
+    labeldate = [x for x in range(1,31)]
     # print(pred)
     preds = []
     for i in pred:
@@ -215,8 +217,6 @@ def lowpointday(ticker):
     c= ticker
     a= " 종목이 코로나 진행 기간 동안 최저점을 찍은 날짜는 "
     b= "입니다.   <br> "
-    
-    result=""
     result= c+ a+ str(lowday)[0:10]+ b
 
     return result
@@ -301,8 +301,7 @@ def cross(ticker1, ticker2, startday, endday):
     return df1higherpercent.round(2)
 
 def plot(request):
-    qs = dailycovid.objects.all().values().order_by('intdate')
-    # print(qs)
+    # covidData()
     return render(request, 'plot.html')
 
 
@@ -466,12 +465,15 @@ def code_totalVaccine(request):
 def codeDate(request):
     code = request.GET.get('code')
     date = request.GET.get('date')
+    date = re.compile('[^0-9]').sub('', date)
     percent = pluspercent(code, date)
     context = {'msg':'메세지 성공', 'percent':percent}
     return JsonResponse(context)
 
 def covidspread(request):
     date = request.GET.get('date')
+    date = re.compile('[^0-9]').sub('', date)
+    print(type(date))
     spread = covidgoingon(date)
     print(spread)
     context = {'spread':spread}

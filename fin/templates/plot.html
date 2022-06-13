@@ -236,7 +236,10 @@ $("#fstock1btn").click(function(){
                     }]
                 },
 
-                chartOptions = {
+                chartOptions = {hover: {
+            mode: 'nearest',
+            intersect: true
+        },
                     responsive: true,
                     interaction: {
                     mode: 'index',
@@ -310,7 +313,10 @@ $("#fstock1btn").click(function(){
                     }]
                 },
 
-                chartOptions = {
+                chartOptions = {hover: {
+            mode: 'nearest',
+            intersect: true
+        },
                     responsive: true,
                     interaction: {
                     mode: 'index',
@@ -383,7 +389,10 @@ $("#fstock1btn").click(function(){
                     }]
                 },
 
-                chartOptions = {
+                chartOptions = {hover: {
+            mode: 'nearest',
+            intersect: true
+        },
                     responsive: true,
                     interaction: {
                     mode: 'index',
@@ -446,7 +455,10 @@ $("#fstock2btn").click(function(){
                 backgroundColor: "rosybrown",
                 }]
             },
-            chartOptions = {
+            chartOptions = {hover: {
+            mode: 'nearest',
+            intersect: true
+        },
                 responsive: true,
                 interaction: {
                 mode: 'index',
@@ -492,17 +504,18 @@ $("#aibtn").click(function(){
         dataType:"json",
         success:function(data) {
             closeLoading()
-            alert('인공지능이 예측한 내일의 가격은 '+data.today_close_value+'원 입니다.')
+            alert('인공지능이 예측한 내일의 가격은 '+data.today_close_value+'원입니다.')
+             $("#flist").append("<li class='text'> 인공지능이 예측한 내일의 가격은 "+data.today_close_value+" 원입니다.</li>")
             shapeChartData = {
                 labels: data.labeldate,
                 datasets: [{
-                    label: '인공지능이 예측한 지난 30일',
+                    label: '인공지능의 예측',
                     data: data.preds,
                     borderColor: 'skyblue',
                     backgroundColor: 'skyblue',
                     fill: false,
                     borderWidth: 1},
-                    {label: '실제 주가 추이',
+                    {label: '실제 주가',
                     data: data.Y_test,
                     borderColor: 'red',
                     backgroundColor: 'red',
@@ -526,7 +539,6 @@ $("#radioBtn3").click(function(){
     var end = $("#fcovid3").val()
     var code = $("#fcovid4").val()
     var radiovalue = $('input:radio[name=covid]:checked').val()
-    alert("기간은 YYYY-MM-DD 형식으로 입력해 주세요.");
     if(radiovalue=='Daily-Covid'){
         $.ajax({
             url:"/fin/periodselect",
@@ -552,7 +564,10 @@ $("#radioBtn3").click(function(){
                     }]
                 },
 
-                chartOptions = {
+                chartOptions = {hover: {
+            mode: 'nearest',
+            intersect: true
+        },
                     responsive: true,
                     interaction: {
                     mode: 'index',
@@ -610,7 +625,10 @@ $("#radioBtn3").click(function(){
                     }]
                 },
 
-                chartOptions = {
+                chartOptions = {hover: {
+            mode: 'nearest',
+            intersect: true
+        },
                     responsive: true,
                     interaction: {
                     mode: 'index',
@@ -686,6 +704,7 @@ $("#fstock3btn").click(function(){
             $("#fcovid4").val(data.ticker);
             $("#fstock4").val(data.ticker);
             $("#fstock2").val(data.ticker);
+            $("#fstock1").val(data.ticker);
         },
         error:function(){
             alert("정확한 회사명을 기입하시오");
@@ -705,7 +724,8 @@ function openLoading() {
     // 로딩 이미지 주소 및 옵션
     let loadingImg ='';
     loadingImg += "<div id='loadingImg' style='position:absolute; top: calc(50% - (200px / 2)); width:100%; z-index:99999999;'>";
-    loadingImg += " <img src='https://loadingapng.com/animation.php?image=4&fore_color=000000&back_color=FFFFFF&size=128x128&transparency=1&image_type=0&uncacher=75.5975991029623' style='position: relative; display: block; margin: 0px auto;'/>";
+    loadingImg += "<div style='margin: 0px auto; position: relative; display: block; font-size: 30px; font-weight: bold;padding:5px;'> 1 ~ 3 분 소요 </div>";
+    loadingImg += " <img src='https://loadingapng.com/animation.php?image=4&fore_color=000000&back_color=FFFFFF&size=128x128&transparency=1&image_type=0&uncacher=75.5975991029623' style='position: relative; display: block; margin: 0px auto;'/>"
     loadingImg += "</div>";
     //레이어 추가
     $('body')
@@ -737,7 +757,10 @@ function barChart() {
     type: 'bar',
     data: shapeChartData,
         options:  {
-            scales: {
+            hover: {
+            mode: 'nearest',
+            intersect: true
+        },scales: {
                 yAxes: [{
                     ticks: {
                         beginAtZero: true
@@ -844,7 +867,7 @@ function multiaxisChart(){
                     <label>종목 코드(ticker)</label><br>
                     <input type="text" id="fstock2"><br>
                     <label>2020년 1월 20일 이후의 이후의 날짜</label><br>
-                    <input type="text" id="fstock3">
+                    <input type="date" id="fstock3">
                     <input type="button"  value="GO" id = 'fstock2btn'>
                 </form>
                 <br>
@@ -885,7 +908,7 @@ function multiaxisChart(){
                         <label>*확진자 추세</label><br>
                     </div>
                     <label>2020년 1월 20일 이후의 날짜</label><br>
-                    <input type="text" id="fcovid1"><br>
+                    <input type="date" id="fcovid1"><br>
                     <input type="button" value="Submit" id="radioBtn2">
                 </form>
                 <br>
@@ -895,9 +918,9 @@ function multiaxisChart(){
                         <label>*기간 선택</label><br>
                     </div>
                     <label>2020년 1월 20일 이후의 날짜 - 시작</label><br>
-                    <input type="text" id="fcovid2"><br>
+                    <input type="date" id="fcovid2"><br>
                     <label>2020년 1월 20일 이후의 날짜 - 끝</label><br>
-                    <input type="text" id="fcovid3"><br>
+                    <input type="date" id="fcovid3"><br>
                     <label>종목 코드(ticker)</label><br>
                     <input type="text" id="fcovid4"><br>
                     <input type="button" value="Submit" id="radioBtn3">
