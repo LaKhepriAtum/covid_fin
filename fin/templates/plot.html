@@ -696,7 +696,7 @@ $("#fstock3btn").click(function(){
     var ticker = $("#fstock5").val()
     $.ajax({
         url:"/fin/ticker_search",
-        type:"get",
+        type:'get',
         data:{'ticker':ticker},
         dataType:"json",
         success:function(data){
