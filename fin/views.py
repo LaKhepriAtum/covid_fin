@@ -54,7 +54,7 @@ def aipredict(request):
     print(codedata.tail())
     scaler = MinMaxScaler()
     close_data = scaler.fit_transform(codedata['Close'].values.reshape(-1,1))
-    # 종가만 다시 원 상태로 돌릴 MinMaxScaler pickle로
+    # 종가만 다시 원 상태로 돌릴 MinMaxScaler pickle
     print(scaled_data.shape)
     sequence_X = []
     sequence_Y = []
