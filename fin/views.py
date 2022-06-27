@@ -1,14 +1,9 @@
-import csv
 from django.http import JsonResponse
 from django.shortcuts import render
 import json
 import xmltodict
 from fin.models import dailycovid , dailyvaccine
-import pandas as pd
-from dateutil.parser import parse
 import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib
 import pandas as pd
 import FinanceDataReader as fdr
 import datetime as dt
